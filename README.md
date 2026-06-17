@@ -119,6 +119,8 @@ NexBox example:
 
 The extension runs the configured script from the workspace root, streams output to a status webview and output channel, and lets you cancel a running process.
 
+You can also open Local Build Runner from the Activity Bar side panel or from the top `Run` menu, so you do not need to use `CMD+Shift+P`.
+
 
 ```
 code --extensionDevelopmentPath="$(pwd)"

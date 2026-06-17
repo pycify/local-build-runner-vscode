@@ -8,6 +8,7 @@ let cancellationRequested = false;
 let outputChannel;
 let statusPanel;
 let interactivePanel;
+let sideView;
 let interactiveState;
 let statusState = {
   running: false,
@@ -27,6 +28,19 @@ function activate(context) {
     vscode.commands.registerCommand('localBuildRunner.dryRun', () => runPreset(undefined, true)),
     vscode.commands.registerCommand('localBuildRunner.cancel', cancelRunningBuild),
     vscode.commands.registerCommand('localBuildRunner.openConfig', openConfig),
+    vscode.window.registerWebviewViewProvider('localBuildRunner.sideView', {
+      resolveWebviewView: async (webviewView) => {
+        sideView = webviewView;
+        sideView.webview.options = { enableScripts: true };
+        sideView.webview.onDidReceiveMessage(handleWebviewMessage);
+        sideView.onDidDispose(() => {
+          sideView = undefined;
+        });
+
+        await loadInteractiveState();
+        renderInteractivePanel();
+      },
+    }),
     outputChannel
   );
 }
@@ -62,6 +76,29 @@ async function runPreset(mode, forceDryRun = false) {
     interactiveState.booleanFlags.add('dry-run');
   }
   renderInteractivePanel();
+}
+
+async function loadInteractiveState() {
+  const workspace = getWorkspace();
+  if (!workspace) {
+    interactiveState = undefined;
+    return false;
+  }
+
+  const config = await loadConfig(workspace);
+  if (!config) {
+    interactiveState = undefined;
+    return false;
+  }
+
+  interactiveState = {
+    workspace,
+    config,
+    selections: defaultSelections(config),
+    valueFlags: defaultValueFlags(config),
+    booleanFlags: new Set(config.defaultBooleanFlags || []),
+  };
+  return true;
 }
 
 async function collectValueFlags(config) {
@@ -190,10 +227,9 @@ function showInteractivePanel(workspace, config) {
       { enableScripts: true, retainContextWhenHidden: true }
     );
 
-    interactivePanel.webview.onDidReceiveMessage(handleInteractiveMessage);
+    interactivePanel.webview.onDidReceiveMessage(handleWebviewMessage);
     interactivePanel.onDidDispose(() => {
       interactivePanel = undefined;
-      interactiveState = undefined;
     });
   }
 
@@ -218,6 +254,21 @@ function defaultValueFlags(config) {
     if (defaultValue) values[flag] = String(defaultValue);
   }
   return values;
+}
+
+async function handleWebviewMessage(message) {
+  if (message.type === 'openConfig') {
+    await openConfig();
+    return;
+  }
+
+  if (message.type === 'refresh') {
+    await loadInteractiveState();
+    renderInteractivePanel();
+    return;
+  }
+
+  await handleInteractiveMessage(message);
 }
 
 async function handleInteractiveMessage(message) {
@@ -270,8 +321,19 @@ function cleanValues(values) {
 }
 
 function renderInteractivePanel() {
-  if (!interactivePanel || !interactiveState) return;
+  if (!interactiveState) {
+    const html = renderNoConfigHtml();
+    if (interactivePanel) interactivePanel.webview.html = html;
+    if (sideView) sideView.webview.html = html;
+    return;
+  }
 
+  const html = renderInteractiveHtml();
+  if (interactivePanel) interactivePanel.webview.html = html;
+  if (sideView) sideView.webview.html = html;
+}
+
+function renderInteractiveHtml() {
   const { workspace, config, selections, valueFlags, booleanFlags } = interactiveState;
   const command = buildCommand(config, selections, valueFlags, booleanFlags);
   const options = Object.entries(config.options || {})
@@ -284,7 +346,7 @@ function renderInteractivePanel() {
     .map((flag) => renderCheckbox(flag, booleanFlags.has(flag)))
     .join('');
 
-  interactivePanel.webview.html = `<!doctype html>
+  return `<!doctype html>
 <html>
 <head>
   <style>
@@ -331,10 +393,6 @@ function renderInteractivePanel() {
 
   <div class="actions">
     <button data-run="current">Start Build</button>
-    <button data-run="build">Build</button>
-    <button data-run="patch">Patch</button>
-    <button data-dry-run="true" class="secondary">Dry Run</button>
-    <button data-refresh="true" class="secondary">Refresh Preview</button>
     <button data-cancel="true" class="danger"${currentProcess ? '' : ' disabled'}>Cancel Running Build</button>
   </div>
 
@@ -370,12 +428,37 @@ function renderInteractivePanel() {
       button.addEventListener('click', () => {
         if (button.disabled) return;
         if (button.dataset.cancel) return vscode.postMessage({ type: 'cancel' });
-        if (button.dataset.refresh) return post('update');
-        if (button.dataset.dryRun) return post('run', { dryRun: true });
-        const mode = button.dataset.run === 'current' ? undefined : button.dataset.run;
-        post('run', { mode });
+        post('run');
       });
     });
+  </script>
+</body>
+</html>`;
+}
+
+function renderNoConfigHtml() {
+  return `<!doctype html>
+<html>
+<head>
+  <style>
+    body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 16px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: 0; padding: 8px 12px; border-radius: 3px; cursor: pointer; }
+    button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+    p { line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <h2>Local Build</h2>
+  <p>No Local Build Runner config is loaded for this workspace.</p>
+  <div class="actions">
+    <button data-open-config="true">Open Config</button>
+    <button data-refresh="true" class="secondary">Refresh</button>
+  </div>
+  <script>
+    const vscode = acquireVsCodeApi();
+    document.querySelector('[data-open-config]').addEventListener('click', () => vscode.postMessage({ type: 'openConfig' }));
+    document.querySelector('[data-refresh]').addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
   </script>
 </body>
 </html>`;

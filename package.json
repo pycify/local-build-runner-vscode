@@ -3,27 +3,43 @@
   "displayName": "Local Build Runner",
   "description": "Reusable local build launcher for Dart/Flutter deployment scripts.",
   "version": "0.1.0",
-  "publisher": "pycify",
+  "publisher": "Pycify",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pycify/local-build-runner-vscode.git"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:localBuildRunner.run",
-    "onCommand:localBuildRunner.runBuild",
-    "onCommand:localBuildRunner.runPatch",
-    "onCommand:localBuildRunner.dryRun",
-    "onCommand:localBuildRunner.cancel",
-    "onCommand:localBuildRunner.openConfig"
-  ],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "localBuildRunner",
+          "title": "Local Build",
+          "icon": "resources/local-build.svg"
+        }
+      ]
+    },
+    "views": {
+      "localBuildRunner": [
+        {
+          "id": "localBuildRunner.sideView",
+          "name": "Runner",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "localBuildRunner.run",
-        "title": "Local Build Runner: Run..."
+        "title": "Local Build Runner: Open",
+        "icon": "$(tools)"
       },
       {
         "command": "localBuildRunner.runBuild",
@@ -46,6 +62,30 @@
         "title": "Local Build Runner: Open Config"
       }
     ],
+    "menus": {
+      "menubar/run": [
+        {
+          "command": "localBuildRunner.run",
+          "group": "navigation@10"
+        },
+        {
+          "command": "localBuildRunner.cancel",
+          "group": "navigation@11"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "localBuildRunner.run",
+          "when": "view == localBuildRunner.sideView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "localBuildRunner.openConfig",
+          "when": "view == localBuildRunner.sideView",
+          "group": "navigation@2"
+        }
+      ]
+    },
     "configuration": {
       "title": "Local Build Runner",
       "properties": {
