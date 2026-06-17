@@ -1,0 +1,58 @@
+{
+  "name": "FastChop",
+  "script": "tools/deploy/bin/local_build.dart",
+  "runner": "fvm dart run",
+  "defaults": {
+    "mode": "build",
+    "env": "dev",
+    "platform": "all",
+    "apps": "all",
+    "play-track": "internal",
+    "firebase-group-aliases": "internal-testers"
+  },
+  "options": {
+    "mode": ["build", "patch"],
+    "env": ["dev", "prod"],
+    "platform": ["all", "android", "ios"],
+    "apps": ["all", "customer", "user", "vendor", "delivery"]
+  },
+  "valueFlags": [
+    "build-name",
+    "build-number",
+    "release-version",
+    "flutter-version",
+    "google-service-account",
+    "firebase-service-account",
+    "asc-key-id",
+    "asc-issuer-id",
+    "asc-private-key-path",
+    "asc-private-key",
+    "prod-config-source",
+    "dev-config-source",
+    "play-track",
+    "firebase-group-aliases"
+  ],
+  "booleanFlags": [
+    "no-upload",
+    "dry-run",
+    "allow-store-fallback",
+    "can-clean",
+    "skip-pub-get",
+    "skip-build-runner",
+    "skip-pod-install",
+    "no-obfuscate"
+  ],
+  "credentials": {
+    "google-service-account": "tools/deploy/credential/service_account.json",
+    "firebase-service-account": "tools/deploy/credential/firebase_service_account.json",
+    "apple-config": "tools/deploy/credential/apple_config.json"
+  },
+  "steps": [
+    { "name": "Pub get", "match": "pub get" },
+    { "name": "Build runner", "match": "build_runner" },
+    { "name": "Pods", "match": "pod install" },
+    { "name": "Android", "match": "android" },
+    { "name": "iOS", "match": "ios" },
+    { "name": "Upload", "match": "upload" }
+  ]
+}

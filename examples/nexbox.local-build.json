@@ -1,0 +1,39 @@
+{
+  "name": "NexBox",
+  "script": "tools/deploy/bin/local_build.dart",
+  "runner": "fvm dart run",
+  "defaults": {
+    "mode": "build",
+    "env": "dev",
+    "platform": "all"
+  },
+  "options": {
+    "mode": ["build", "patch"],
+    "env": ["dev", "stg", "prod"],
+    "platform": ["all", "android", "ios"]
+  },
+  "valueFlags": [
+    "build-name",
+    "build-number",
+    "release-version",
+    "flutter-version",
+    "android-package-name"
+  ],
+  "booleanFlags": [
+    "no-upload",
+    "dry-run",
+    "can-clean",
+    "skip-pub-get",
+    "skip-build-runner",
+    "skip-pod-install",
+    "no-obfuscate"
+  ],
+  "steps": [
+    { "name": "Pub get", "match": "pub get" },
+    { "name": "Build runner", "match": "build_runner" },
+    { "name": "Pods", "match": "pod install" },
+    { "name": "Android", "match": "android" },
+    { "name": "iOS", "match": "ios" },
+    { "name": "Upload", "match": "upload" }
+  ]
+}

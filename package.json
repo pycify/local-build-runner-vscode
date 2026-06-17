@@ -1,0 +1,60 @@
+{
+  "name": "local-build-runner",
+  "displayName": "Local Build Runner",
+  "description": "Reusable local build launcher for Dart/Flutter deployment scripts.",
+  "version": "0.1.0",
+  "publisher": "pycify",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:localBuildRunner.run",
+    "onCommand:localBuildRunner.runBuild",
+    "onCommand:localBuildRunner.runPatch",
+    "onCommand:localBuildRunner.dryRun",
+    "onCommand:localBuildRunner.cancel",
+    "onCommand:localBuildRunner.openConfig"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "localBuildRunner.run",
+        "title": "Local Build Runner: Run..."
+      },
+      {
+        "command": "localBuildRunner.runBuild",
+        "title": "Local Build Runner: Build"
+      },
+      {
+        "command": "localBuildRunner.runPatch",
+        "title": "Local Build Runner: Patch"
+      },
+      {
+        "command": "localBuildRunner.dryRun",
+        "title": "Local Build Runner: Dry Run"
+      },
+      {
+        "command": "localBuildRunner.cancel",
+        "title": "Local Build Runner: Cancel Running Build"
+      },
+      {
+        "command": "localBuildRunner.openConfig",
+        "title": "Local Build Runner: Open Config"
+      }
+    ],
+    "configuration": {
+      "title": "Local Build Runner",
+      "properties": {
+        "localBuildRunner.configFile": {
+          "type": "string",
+          "default": ".vscode/local-build.json",
+          "description": "Workspace-relative path to the Local Build Runner config file."
+        }
+      }
+    }
+  }
+}
